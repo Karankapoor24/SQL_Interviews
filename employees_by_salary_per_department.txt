@@ -1,0 +1,42 @@
+-- FIND top 3 employees by salary each department
+
+
+CREATE TABLE employees (
+    employee_id INT,
+    employee_name VARCHAR(100),
+    department VARCHAR(50),
+    salary DECIMAL(10, 2),
+    manager_id INT,
+);
+
+
+INSERT INTO employees (employee_id, employee_name, department, salary, manager_id) VALUES
+(1, 'Alice Johnson',     'Sales',        150000.00, NULL),
+(2, 'Brian Smith',       'Engineering',  160000.00, NULL),
+(3, 'Carla Lee',         'HR',           140000.00, NULL),
+(4, 'David Wong',        'Sales',        120000.00, 1),
+(5, 'Eva Martinez',      'Engineering',  125000.00, 2),
+(6, 'Frank Gupta',       'HR',           115000.00, 3),
+(7, 'Grace Kim',         'Sales',        90000.00,  4),
+(8, 'Henry Brown',       'Sales',        95000.00,  4),
+(9, 'Ivy Patel',         'Engineering',  130000.00, 5),
+(10, 'Jack Wilson',      'Engineering',  110000.00, 5),
+(11, 'Kylie Davis',      'HR',           95000.00, 6),
+(12, 'Liam Chen',        'HR',           119000.00, 6),
+(13, 'Monica Hill',      'Sales',        105000.00, 1),
+(14, 'Nathan Scott',     'Engineering',  108000.00, 2),
+(15, 'Olivia Reed',      'HR',           99000.00, 3),
+(16, 'Paul Adams',       'HR',           85000.00, 3),
+(17, 'Quinn Taylor',     'Engineering',  135000.00, 5),
+(18, 'Rita Kapoor',      'Sales',        95000.00, NULL),
+(19, 'Samir Rana',       'Sales',        87000.00, 4),
+(20, 'Tina Fox',         'Sales',        91000.00, 4);
+
+
+SELECT * FROM (
+SELECT 
+	*,
+	ROW_NUMBER() OVER(PARTITION BY department ORDER BY salary DESC) AS rn
+FROM employees
+) a 
+WHERE rn <=3
