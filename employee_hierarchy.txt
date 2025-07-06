@@ -1,0 +1,39 @@
+-- Find the hierarchy of employees. For each employee showcase all the employees working under him(including themselves).
+-- Such that when the child tree expands i.e. new employees should be dynamically assigned to the managers till the top level hierarchy.
+
+
+
+CREATE TABLE employee_hierarchy (
+	emp_id INT,
+	reporting_id INT
+); 
+
+
+
+INSERT INTO employee_hierarchy VALUES
+(1, NULL),
+(2, 1),
+(3, 1),
+(4, 2), 
+(5, 2),
+(6, 3),
+(7, 3),
+(8, 4),
+(9, 4);
+
+
+WITH cte AS (
+SELECT
+	emp_id, emp_id AS emp_hierarchy
+FROM employee_hierarchy
+UNION ALL
+SELECT
+	cte.emp_id, eh.emp_id AS emp_hierarchy
+FROM cte
+INNER JOIN employee_hierarchy eh
+ON cte.emp_hierarchy = eh.reporting_id
+)
+SELECT
+	*
+FROM cte
+ORDER BY emp_id, emp_hierarchy

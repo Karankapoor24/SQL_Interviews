@@ -1,0 +1,113 @@
+/*
+Recursive CTE concept
+
+Syntax
+
+WITH [RECURSIVE] cte_name AS (
+SELECT Query (Base Query)
+UNION ALL
+SELECT Query (Recursive Query using cte_name [with termination condition])
+)
+SELECT * FROM cte_name
+
+*/
+
+
+-- Display Numbers 1 to 10 without using any built-in functions
+
+
+WITH numbers AS (
+SELECT 1 AS n
+UNION ALL
+SELECT 
+	n+1
+FROM numbers
+WHERE n < 10
+)
+SELECT * FROM numbers
+
+
+-- Find the hierarchy of employees under a given manager "Asha".
+
+
+emp_id	emp_name	manager_name	lvl
+7		Asha		Shripadh		1
+5		Michael		Asha			2
+6		Arvind		Asha			2
+2		Satya		Michael			3
+3		Jia			Michael			3
+4		David		Michael			3
+
+
+CREATE TABLE emp_details
+    (
+        id           int PRIMARY KEY,
+        name         varchar(100),
+        manager_id   int,
+        salary       int,
+        designation  varchar(100)
+
+    );
+
+INSERT INTO emp_details VALUES (1,  'Shripadh', NULL, 10000, 'CEO');
+INSERT INTO emp_details VALUES (2,  'Satya', 5, 1400, 'Software Engineer');
+INSERT INTO emp_details VALUES (3,  'Jia', 5, 500, 'Data Analyst');
+INSERT INTO emp_details VALUES (4,  'David', 5, 1800, 'Data Scientist');
+INSERT INTO emp_details VALUES (5,  'Michael', 7, 3000, 'Manager');
+INSERT INTO emp_details VALUES (6,  'Arvind', 7, 2400, 'Architect');
+INSERT INTO emp_details VALUES (7,  'Asha', 1, 4200, 'CTO');
+INSERT INTO emp_details VALUES (8,  'Maryam', 1, 3500, 'Manager');
+INSERT INTO emp_details VALUES (9,  'Reshma', 8, 2000, 'Business Analyst');
+INSERT INTO emp_details VALUES (10, 'Akshay', 8, 2500, 'Java Developer');
+
+
+
+WITH employee_hierarchy AS (
+SELECT 
+	id, name, manager_id, designation, 1 AS lvl
+FROM emp_details
+WHERE id = 7
+
+UNION ALL
+
+SELECT
+	e.id, e.name, e.manager_id, e.designation, eh.lvl+1 AS lvl
+FROM employee_hierarchy eh
+inner join emp_details e 
+ON eh.id = e.manager_id 
+)
+SELECT 
+	eh2.id AS emp_id, eh2.name AS emp_name, e2.name AS manager_name, eh2.lvl
+FROM employee_hierarchy eh2
+INNER JOIN emp_details e2
+ON e2.id = eh2.manager_id
+
+
+
+
+-- Find the hierarchy of managers for a given employee "David". 
+
+
+emp_id	emp_name	manger_id	manager_name	lvl
+4		David		5			Michael			1
+5		Michael		7			Asha			2
+7		Asha		1			Shripadh		3
+
+
+WITH employee_hierarchy AS (
+SELECT
+	id, name, manager_id, designation, 1 AS lvl
+FROM emp_details
+WHERE id=4
+UNION ALL
+SELECT
+	e.id, e.name, e.manager_id, e.designation, lvl+1 AS lvl
+FROM employee_hierarchy eh
+INNER JOIN emp_details e
+ON eh.manager_id = e.id
+)
+SELECT 
+	eh2.id AS emp_id, eh2.name AS emp_name, eh2.manager_id AS manger_id, e2.name AS manager_name, eh2.lvl 
+FROM employee_hierarchy eh2
+join emp_details e2
+ON eh2.manager_id = e2.id
