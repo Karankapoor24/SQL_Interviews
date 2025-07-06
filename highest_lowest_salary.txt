@@ -1,0 +1,30 @@
+-- From the given employee table, display the highest and lowest salary corresponding to each department. 
+-- Return the result corresponding to each employee record
+
+
+create table employee_salary
+(
+	id 			int IDENTITY(1,1) PRIMARY KEY,
+	name 		varchar(100),
+	dept 		varchar(100),
+	salary 		int
+);
+
+
+insert into employee_salary values('Alexander', 'Admin', 6500);
+insert into employee_salary values('Leo', 'Finance', 7000);
+insert into employee_salary values('Robin', 'IT', 2000);
+insert into employee_salary values('Ali', 'IT', 4000);
+insert into employee_salary values('Maria', 'IT', 6000);
+insert into employee_salary values('Alice', 'Admin', 5000);
+insert into employee_salary values('Sebastian', 'HR', 3000);
+insert into employee_salary values('Emma', 'Finance', 4000);
+insert into employee_salary values('John', 'HR', 4500);
+insert into employee_salary values('Kabir', 'IT', 8000);
+
+
+SELECT
+	*,
+	MAX(salary) OVER(PARTITION BY dept ORDER BY salary DESC) AS highest_sal,
+	MIN(salary) OVER(PARTITION BY dept ORDER BY salary DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS lowest_sal
+FROM employee_salary

@@ -1,0 +1,39 @@
+-- Return the First Name, Middle Name and Last name of the customers
+
+
+customer_name			first_name	middle_name	last_name
+Ankit Bansal			Ankit		NULL		Bansal
+Vishal Pratap Singh		Vishal		Pratap		Singh
+Michael					Michael		NULL		NULL
+
+
+create table customers  (customer_name varchar(30))
+
+insert into customers values 
+('Ankit Bansal'),
+('Vishal Pratap Singh'),
+('Michael'); 
+
+
+
+WITH cte AS (
+SELECT 
+	*,
+	LEN(customer_name) - LEN(REPLACE(customer_name, ' ', '')) AS num_spaces,
+	CHARINDEX(' ', customer_name) AS first_space_pos,
+	CHARINDEX(' ', customer_name, CHARINDEX(' ', customer_name)+1) AS second_space_pos
+FROM customers
+)
+SELECT
+	customer_name,
+	CASE WHEN num_spaces = 0 THEN customer_name
+	ELSE SUBSTRING(customer_name,1, first_space_pos-1) 
+	END AS first_name,
+	CASE WHEN num_spaces <= 1 THEN NULL
+	ELSE SUBSTRING(customer_name, first_space_pos+1, second_space_pos-first_space_pos-1)
+	END AS middle_name,
+	CASE WHEN num_spaces=0 THEN NULL 
+	WHEN num_spaces=1 THEN SUBSTRING(customer_name, first_space_pos+1, LEN(customer_name)-first_space_pos)
+	WHEN num_spaces=2 THEN SUBSTRING(customer_name, second_space_pos+1, LEN(customer_name)-second_space_pos)
+	END AS last_name
+FROM cte

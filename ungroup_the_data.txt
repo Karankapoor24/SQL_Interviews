@@ -1,0 +1,40 @@
+-- Ungroup the given input data
+
+
+id	item_name
+1	Water Bottle
+1	Water Bottle
+2	Tent
+3	Apple
+3	Apple
+3	Apple
+3	Apple
+
+
+create table travel_items
+(
+	id              int,
+	item_name       varchar(50),
+	total_count     int
+);
+
+
+insert into travel_items values (1, 'Water Bottle', 2);
+insert into travel_items values (2, 'Tent', 1);
+insert into travel_items values (3, 'Apple', 4);
+
+
+WITH cte AS (
+SELECT 
+	*, 1 AS curr_cnt 
+FROM travel_items
+UNION ALL
+SELECT 
+	id, item_name, total_count, curr_cnt+1 AS curr_cnt
+FROM cte
+WHERE curr_cnt < total_count
+)
+SELECT 
+	id, item_name 
+FROM cte
+ORDER BY id
