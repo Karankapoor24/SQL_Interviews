@@ -1,0 +1,93 @@
+-- Derive the output
+
+
+create table sales_data
+    (
+        sales_date      date,
+        customer_id     varchar(30),
+        amount          varchar(30)
+    );
+	
+	
+insert into sales_data values ('01-Jan-2021', 'Cust-1', '50$');
+insert into sales_data values ('02-Jan-2021', 'Cust-1', '50$');
+insert into sales_data values ('03-Jan-2021', 'Cust-1', '50$');
+insert into sales_data values ('01-Jan-2021', 'Cust-2', '100$');
+insert into sales_data values ('02-Jan-2021', 'Cust-2', '100$');
+insert into sales_data values ('03-Jan-2021', 'Cust-2', '100$');
+insert into sales_data values ('01-Feb-2021', 'Cust-2', '-100$');
+insert into sales_data values ('02-Feb-2021', 'Cust-2', '-100$');
+insert into sales_data values ('03-Feb-2021', 'Cust-2', '-100$');
+insert into sales_data values ('01-Mar-2021', 'Cust-3', '1$');
+insert into sales_data values ('01-Apr-2021', 'Cust-3', '1$');
+insert into sales_data values ('01-May-2021', 'Cust-3', '1$');
+insert into sales_data values ('01-Jun-2021', 'Cust-3', '1$');
+insert into sales_data values ('01-Jul-2021', 'Cust-3', '-1$');
+insert into sales_data values ('01-Aug-2021', 'Cust-3', '-1$');
+insert into sales_data values ('01-Sep-2021', 'Cust-3', '-1$');
+insert into sales_data values ('01-Oct-2021', 'Cust-3', '-1$');
+insert into sales_data values ('01-Nov-2021', 'Cust-3', '-1$');
+insert into sales_data values ('01-Dec-2021', 'Cust-3', '-1$');
+
+
+WITH base_data AS (
+SELECT 
+	customer_id AS customer, 
+	FORMAT(sales_date, 'MMM-yy') AS sales_date,
+	CAST(REPLACE(amount, '$', '') AS INT) AS amount
+FROM sales_data
+), final_data AS (
+SELECT 
+	customer, 
+	SUM(CASE WHEN sales_date = 'Jan-21' THEN amount ELSE 0 END) AS Jan_21,
+	SUM(CASE WHEN sales_date = 'Feb-21' THEN amount ELSE 0 END) AS Feb_21,
+	SUM(CASE WHEN sales_date = 'Mar-21' THEN amount ELSE 0 END) AS Mar_21,
+	SUM(CASE WHEN sales_date = 'Apr-21' THEN amount ELSE 0 END) AS Apr_21,
+	SUM(CASE WHEN sales_date = 'May-21' THEN amount ELSE 0 END) AS May_21,
+	SUM(CASE WHEN sales_date = 'Jun-21' THEN amount ELSE 0 END) AS Jun_21,
+	SUM(CASE WHEN sales_date = 'Jul-21' THEN amount ELSE 0 END) AS Jul_21,
+	SUM(CASE WHEN sales_date = 'Aug-21' THEN amount ELSE 0 END) AS Aug_21,
+	SUM(CASE WHEN sales_date = 'Sep-21' THEN amount ELSE 0 END) AS Sep_21,
+	SUM(CASE WHEN sales_date = 'Oct-21' THEN amount ELSE 0 END) AS Oct_21,
+	SUM(CASE WHEN sales_date = 'Nov-21' THEN amount ELSE 0 END) AS Nov_21,
+	SUM(CASE WHEN sales_date = 'Dec-21' THEN amount ELSE 0 END) AS Dec_21,
+	SUM(amount) AS Total
+FROM base_data
+GROUP BY customer
+UNION ALL
+SELECT 
+	'Total' AS customer, 
+	SUM(CASE WHEN sales_date = 'Jan-21' THEN amount ELSE 0 END) AS Jan_21,
+	SUM(CASE WHEN sales_date = 'Feb-21' THEN amount ELSE 0 END) AS Feb_21,
+	SUM(CASE WHEN sales_date = 'Mar-21' THEN amount ELSE 0 END) AS Mar_21,
+	SUM(CASE WHEN sales_date = 'Apr-21' THEN amount ELSE 0 END) AS Apr_21,
+	SUM(CASE WHEN sales_date = 'May-21' THEN amount ELSE 0 END) AS May_21,
+	SUM(CASE WHEN sales_date = 'Jun-21' THEN amount ELSE 0 END) AS Jun_21,
+	SUM(CASE WHEN sales_date = 'Jul-21' THEN amount ELSE 0 END) AS Jul_21,
+	SUM(CASE WHEN sales_date = 'Aug-21' THEN amount ELSE 0 END) AS Aug_21,
+	SUM(CASE WHEN sales_date = 'Sep-21' THEN amount ELSE 0 END) AS Sep_21,
+	SUM(CASE WHEN sales_date = 'Oct-21' THEN amount ELSE 0 END) AS Oct_21,
+	SUM(CASE WHEN sales_date = 'Nov-21' THEN amount ELSE 0 END) AS Nov_21,
+	SUM(CASE WHEN sales_date = 'Dec-21' THEN amount ELSE 0 END) AS Dec_21,
+	NULL AS Total
+FROM base_data
+)
+SELECT
+	customer,
+	CASE WHEN Jan_21 >= 0 THEN CONCAT(Jan_21, '$') ELSE CONCAT('(', Jan_21*-1, ')$') end AS "Jan-21",
+	CASE WHEN Feb_21 >= 0 THEN CONCAT(Feb_21, '$') ELSE CONCAT('(', Feb_21*-1, ')$') end AS "Feb-21",
+	CASE WHEN Mar_21 >= 0 THEN CONCAT(Mar_21, '$') ELSE CONCAT('(', Mar_21*-1, ')$') end AS "Mar-21",
+	CASE WHEN Apr_21 >= 0 THEN CONCAT(Apr_21, '$') ELSE CONCAT('(', Apr_21*-1, ')$') end AS "Apr-21",
+	CASE WHEN May_21 >= 0 THEN CONCAT(May_21, '$') ELSE CONCAT('(', May_21*-1, ')$') end AS "May-21",
+	CASE WHEN Jun_21 >= 0 THEN CONCAT(Jun_21, '$') ELSE CONCAT('(', Jun_21*-1, ')$') end AS "Jun-21",
+	CASE WHEN Jul_21 >= 0 THEN CONCAT(Jul_21, '$') ELSE CONCAT('(', Jul_21*-1, ')$') end AS "Jul-21",
+	CASE WHEN Aug_21 >= 0 THEN CONCAT(Aug_21, '$') ELSE CONCAT('(', Aug_21*-1, ')$') end AS "Aug-21",
+	CASE WHEN Sep_21 >= 0 THEN CONCAT(Sep_21, '$') ELSE CONCAT('(', Sep_21*-1, ')$') end AS "Sep-21",
+	CASE WHEN Oct_21 >= 0 THEN CONCAT(Oct_21, '$') ELSE CONCAT('(', Oct_21*-1, ')$') end AS "Oct-21",
+	CASE WHEN Nov_21 >= 0 THEN CONCAT(Nov_21, '$') ELSE CONCAT('(', Nov_21*-1, ')$') end AS "Nov-21",
+	CASE WHEN Dec_21 >= 0 THEN CONCAT(Dec_21, '$') ELSE CONCAT('(', Dec_21*-1, ')$') end AS "Dec-21",
+	CASE WHEN total IS NULL THEN COALESCE(NULL, '') 
+		ELSE CASE WHEN Total >=0 THEN CONCAT(Total, '$') ELSE CONCAT('(', Total*-1, ')$') end
+	end AS Total
+FROM final_data
+;
