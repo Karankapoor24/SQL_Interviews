@@ -1,0 +1,65 @@
+-- Latest Order Summary per Customer
+-- Write an SQL query to fetch the customer name, their latest order date and total value of the order. 
+-- If a customer made multiple orders on the latest order date then fetch total value for all the orders in that day.
+-- If a customer has not done an order yet, display the “9999-01-01” as latest order date and 0 as the total order value.
+
+
+EXPECTED OUTPUT:
++---------------+-----------------+-------------+
+| CUSTOMER      | LAST_ORDER_DATE | TOTAL_VALUE |
++---------------+-----------------+-------------+
+| David         | 2025-04-15      | 100         |
+| Robin         | 2025-04-20      | 40          |
+| Carol         | 2025-04-20      | 110         |
+| Ali           | 9999-01-01      | 0           |
++---------------+-----------------+-------------+
+
+
+CREATE TABLE cust
+(
+    id     INT,
+    name   VARCHAR(50)
+);
+INSERT INTO cust VALUES
+(101, 'David'),
+(102, 'Robin'),
+(103, 'Carol'),
+(104, 'Ali');
+
+
+CREATE TABLE ord
+(
+    id              INT,
+    customer_id     INT,
+    total_cost      DECIMAL,
+    order_date      DATE
+);
+INSERT INTO ord VALUES
+(1, 101, 100, '2025-04-15'),
+(2, 102, 40, '2025-04-20'),
+(3, 101, 80, '2025-03-12'),
+(4, 101, 120, '2025-03-12'),
+(5, 103, 60, '2025-04-20'),
+(6, 103, 50, '2025-04-20');
+
+
+
+WITH cte AS (
+SELECT 
+	name, 
+	order_date,
+	total_cost,
+	DENSE_RANK() OVER(PARTITION BY name ORDER BY order_date DESC) AS rn
+FROM cust c
+LEFT JOIN ord o
+ON c.id = o.customer_id
+)
+SELECT 
+	name AS CUSTOMER,
+	COALESCE(MAX(order_date), CAST('9999-01-01' AS DATE)) AS LAST_ORDER_DATE,
+	COALESCE(SUM(total_cost), 0) AS TOTAL_COST
+FROM cte
+WHERE rn=1
+GROUP BY name
+;
+

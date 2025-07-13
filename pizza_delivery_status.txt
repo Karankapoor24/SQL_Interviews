@@ -1,0 +1,84 @@
+-- Pizza Delivery Status 
+
+-- A pizza company is taking orders from customers, and each pizza ordered is added to their database as a separate order.
+-- Each order has an associated status, "CREATED or SUBMITTED or DELIVERED'. 
+-- An order's Final_ Status is calculated based on status as follows:
+	1. When all orders for a customer have a status of DELIVERED, that customer's order has a Final_Status of COMPLETED.
+	2. If a customer has some orders that are not DELIVERED and some orders that are DELIVERED, the Final_ Status is IN PROGRESS.
+	3. If all of a customer's orders are SUBMITTED, the Final_Status is AWAITING PROGRESS.
+	4. Otherwise, the Final Status is AWAITING SUBMISSION.
+Write a query to report the customer_name and Final_Status of each customer's arder. Order the results by customer
+
+
+customer_name	status
+John			COMPLETED
+David			IN PROGRESS
+Smith			AWAITING PROGRESS
+Krish			AWAITING SUBMISSION
+
+
+create table cust_orders
+(
+cust_name   varchar(50),
+order_id    varchar(10),
+status      varchar(50)
+);
+
+insert into cust_orders values ('John', 'J1', 'DELIVERED');
+insert into cust_orders values ('John', 'J2', 'DELIVERED');
+insert into cust_orders values ('David', 'D1', 'SUBMITTED');
+insert into cust_orders values ('David', 'D2', 'DELIVERED');
+insert into cust_orders values ('David', 'D3', 'CREATED');
+insert into cust_orders values ('Smith', 'S1', 'SUBMITTED');
+insert into cust_orders values ('Krish', 'K1', 'CREATED');
+
+
+
+
+SELECT 
+	DISTINCT cust_name AS customer_name, 'COMPLETED' AS status
+FROM cust_orders D
+WHERE D.status = 'DELIVERED'
+AND NOT EXISTS (
+				SELECT
+					1
+				FROM cust_orders d2
+				WHERE d2.cust_name = d.cust_name
+				AND d2.status IN ('SUBMITTED', 'CREATED')
+			   )
+UNION
+SELECT 
+	DISTINCT cust_name AS customer_name, 'IN PROGRESS' AS status
+FROM cust_orders D
+WHERE D.status = 'DELIVERED'
+AND EXISTS (
+				SELECT
+					1
+				FROM cust_orders d2
+				WHERE d2.cust_name = d.cust_name
+				AND d2.status IN ('SUBMITTED', 'CREATED')
+			   )
+UNION
+SELECT 
+	DISTINCT cust_name AS customer_name, 'AWAITING PROGRESS' AS status
+FROM cust_orders D
+WHERE D.status = 'SUBMITTED'
+AND NOT EXISTS (
+				SELECT
+					1
+				FROM cust_orders d2
+				WHERE d2.cust_name = d.cust_name
+				AND d2.status IN ('DELIVERED')
+			   )
+UNION
+SELECT 
+	DISTINCT cust_name AS customer_name, 'AWAITING SUBMISSION' AS status
+FROM cust_orders D
+WHERE D.status = 'CREATED'
+AND NOT EXISTS (
+				SELECT
+					1
+				FROM cust_orders d2
+				WHERE d2.cust_name = d.cust_name
+				AND d2.status IN ('DELIVERED', 'SUBMITTED')
+			   )
