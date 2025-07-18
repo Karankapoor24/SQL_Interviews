@@ -1,0 +1,50 @@
+CREATE TABLE emp_man (
+    employee_id INT,
+    name VARCHAR(50),
+    manager_id INT,
+    department VARCHAR(50),
+    salary INT
+);
+
+
+INSERT INTO emp_man (employee_id, name, manager_id, department, salary) VALUES
+(1, 'Rahul',   NULL, 'HR',  90000),
+(2, 'Ajay',     1,    'HR',  60000),
+(3, 'Mohit', 1,    'HR',  55000),
+(4, 'Rakesh',   2,    'HR',  40000),
+(5, 'Sekhar',     NULL, 'IT',  95000),
+(6, 'Alfred',   5,    'HR',  60000);
+
+
+-- Find All Employees Who Are Managers
+SELECT DISTINCT manager_id FROM emp_man
+WHERE manager_id IS NOT NULL;
+
+-- List Employees Who Don’t Have a Manager
+SELECT employee_id FROM emp_man 
+WHERE manager_id IS NULL
+
+-- Get the Name of Each Employee Along With Their Manager’s Name
+SELECT 
+	e.name AS emp_name, m.name AS manager_name 
+FROM emp_man e 
+INNER JOIN emp_man m
+ON e.manager_id = m.employee_id
+
+
+-- How Many Employees Each Manager Has
+SELECT 
+	manager_id,
+	COUNT(employee_id) AS num_emps
+FROM emp_man
+WHERE manager_id IS NOT NULL
+GROUP BY manager_id
+
+
+-- Find Employees Whose Manager Is in a Different Department
+SELECT 
+	e.employee_id
+FROM emp_man e 
+INNER JOIN emp_man m
+ON e.manager_id = m.employee_id 
+AND e.department <> m.department

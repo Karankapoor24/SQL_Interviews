@@ -1,0 +1,61 @@
+-- Find the missing number between minimum and maximum value
+
+
+CREATE TABLE nums(
+	num INT
+);
+
+INSERT INTO nums VALUES 
+(9), 
+(13), 
+(19), 
+(22), 
+(25), 
+(11), 
+(17), 
+(24), 
+(10), 
+(27), 
+(15), 
+(20);
+
+
+
+WITH cte_min AS (
+SELECT MIN(num) AS mini FROM nums
+), cte_max AS (
+SELECT MAX(num) AS maxi FROM nums
+), cte AS (
+SELECT mini FROM cte_min
+UNION ALL
+SELECT mini+1 FROM cte
+WHERE mini < (SELECT maxi FROM cte_max)
+)
+SELECT 
+	mini AS missing_numbers
+FROM cte
+LEFT JOIN nums
+ON cte.mini = nums.num
+WHERE num IS NULL
+
+
+with range_nums AS (
+SELECT 
+	MIN(num) as min_num, MAX(num) AS max_num
+FROM nums
+), all_numbers AS (
+SELECT 
+	min_num AS num
+FROM range_nums
+UNION ALL
+SELECT
+	num+1 AS num
+FROM all_numbers
+WHERE num < (SELECT max_num FROM range_nums)
+)
+SELECT 
+	a.num
+FROM all_numbers a
+LEFT JOIN nums n
+ON a.num=n.num
+WHERE n.num IS NULL

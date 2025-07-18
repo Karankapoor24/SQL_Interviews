@@ -1,0 +1,110 @@
+/*
+Given a list of matches in the group stage of the football World Cup, compute the number of points each team currently has.
+You are given two tables, “teams” and “matches”, with the following structures:
+
+The scoring rules are as follows:
+•	If a team wins a match (scores strictly more goals than the other team), it receives three points.
+•	If a team draws a match (scores exactly the same number of goals as the opponent), it receives one point.
+•	If a team loses a match (scores fewer goals than the opponent), it receives no points.
+
+Write an SQL query that returns a ranking of all teams (“team_id”) described in the “teams” table.
+For each team, you should provide its name and the number of points it received after all described matches (“num_points”). 
+The table should be ordered by “num_points” (in decreasing order). In case of a tie, order the rows by “team_id” (in increasing order).
+
+*/
+
+
+CREATE TABLE teams 
+(
+       team_id       INT PRIMARY KEY,
+       team_name     VARCHAR(50) NOT NULL
+);
+
+
+INSERT INTO teams VALUES(10, 'Give');
+INSERT INTO teams VALUES(20, 'Never');
+INSERT INTO teams VALUES(30, 'You');
+INSERT INTO teams VALUES(40, 'Up');
+INSERT INTO teams VALUES(50, 'Gonna');
+
+
+CREATE TABLE matches 
+(
+       match_id 	INT PRIMARY KEY,
+       host_team 	INT,
+       guest_team 	INT,
+       host_goals 	INT,
+       guest_goals 	INT
+);
+
+
+INSERT INTO matches VALUES(1, 30, 20, 1, 0);
+INSERT INTO matches VALUES(2, 10, 20, 1, 2);
+INSERT INTO matches VALUES(3, 20, 50, 2, 2);
+INSERT INTO matches VALUES(4, 10, 30, 1, 0);
+INSERT INTO matches VALUES(5, 30, 50, 0, 1);
+
+
+
+WITH cte AS (
+SELECT 
+	*,
+	CASE WHEN host_goals > guest_goals THEN 1 ELSE 0 END AS host_win,
+	CASE WHEN host_goals < guest_goals THEN 1 ELSE 0 END AS guest_win,
+	CASE WHEN host_goals = guest_goals THEN 1 ELSE 0 END AS draw
+FROM matches
+), cte2 AS (
+SELECT 
+	host_team AS team_id, host_win*3+draw*1 AS num_points
+FROM cte
+UNION ALL
+SELECT 
+	guest_team AS team_id, guest_win*3+draw*1 AS num_points
+FROM cte
+), cte3 AS (
+SELECT 
+	team_id, SUM(num_points) AS num_points
+FROM cte2
+GROUP BY team_id
+)
+SELECT 
+	t.team_id, t.team_name, COALESCE(c.num_points,0) AS num_points
+FROM teams1 t
+LEFT JOIN cte3 c
+ON t.team_id=c.team_id
+ORDER BY num_points DESC, team_id
+
+
+WITH cte AS (
+SELECT 
+	*,
+	CASE WHEN host_goals > guest_goals THEN 3
+		 WHEN host_goals < guest_goals THEN 0
+		 ELSE 1 
+	END AS host_win,
+	CASE WHEN guest_goals > host_goals THEN 3
+		 WHEN guest_goals < host_goals THEN 0
+		 ELSE 1 
+	END AS guest_win
+FROM matches
+), cte2 AS (
+SELECT 
+	host_team AS team_id, host_win AS num_points
+FROM cte
+UNION ALL
+SELECT 
+	guest_team AS team_id, guest_win AS num_points
+FROM cte
+), cte3 AS (
+SELECT 
+	team_id, SUM(num_points) AS num_points
+FROM cte2
+GROUP BY team_id
+)
+SELECT 
+	t.team_id, t.team_name, COALESCE(c.num_points,0) AS num_points
+FROM teams1 t
+LEFT JOIN cte3 c
+ON t.team_id=c.team_id
+ORDER BY num_points DESC, team_id
+
