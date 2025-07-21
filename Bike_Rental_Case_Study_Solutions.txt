@@ -1,0 +1,179 @@
+-- Find number of bikes by category. Show only categories where number of bikes is greater than 2.
+
+SELECT 
+	category,
+	COUNT(model) AS number_of_bikes
+FROM bike
+GROUP BY category 
+HAVING COUNT(model) > 2;
+
+
+-- Find customer names with the total number of memberships purchased by each
+
+SELECT 
+	c.id,
+	COUNT(m.membership_type_id) AS membership_count
+FROM customer c
+LEFT JOIN membership m
+ON c.id = m.customer_id
+GROUP BY c.id
+ORDER BY 2 DESC, 1
+
+
+-- For each bike, display its ID, category, old price per hour,new_price_per_hour, old_price_per_day, new_price_per_day.
+-- Electric bikes should have a 10% discount for hourly rentals and a 20% discount for daily rentals. 
+-- Mountain bikes should have a 20% discount forhourly rentals and a 50% discount for daily rentals. 
+-- All other bikes should have a 50% discount for all types of rentals.
+
+
+SELECT 
+	id, model, category,
+	price_per_hour AS old_price_per_hour,
+	ROUND(CASE WHEN category='electric' THEN price_per_hour - 0.1*price_per_hour
+		 WHEN category='mountain bike' THEN price_per_hour - 0.2*price_per_hour
+		 ELSE price_per_hour - 0.5*price_per_hour
+	END, 2) AS new_price_per_hour,
+	price_per_day AS old_price_per_day,
+	ROUND(CASE WHEN category='electric' THEN price_per_day - 0.2*price_per_day
+		 WHEN category='mountain bike' THEN price_per_day - 0.5*price_per_day
+		 ELSE price_per_day - 0.5*price_per_day
+	END, 2) AS new_price_per_day
+FROM bike
+
+
+-- Display the number of available bikes and the number of rented bikes by bike category.
+
+
+SELECT 
+	category,
+	COUNT(CASE WHEN status = 'available' THEN 1 ELSE 0 END) AS available_bikes_count,
+	COUNT(CASE WHEN status = 'rented' THEN 1 ELSE 0 END) AS rented_bikes_count
+FROM bike
+WHERE status IN ('available', 'rented')
+GROUP BY category
+
+
+-- Display report in expected Format
+
+
+WITH monthly_revenue AS (
+    SELECT  
+        YEAR(start_timestamp) AS year,
+        MONTH(start_timestamp) AS month,
+        SUM(total_paid) AS revenue
+    FROM rental
+    GROUP BY YEAR(start_timestamp), MONTH(start_timestamp)
+),
+yearly_revenue AS (
+    SELECT  
+        YEAR(start_timestamp) AS year,
+        NULL AS month,
+        SUM(total_paid) AS revenue
+    FROM rental
+    GROUP BY YEAR(start_timestamp)
+),
+overall_revenue AS (
+    SELECT
+        NULL AS year,
+        NULL AS month,
+        SUM(total_paid) AS revenue
+    FROM rental
+)
+SELECT
+    year, month, revenue,
+    CASE WHEN year IS NULL THEN 1 ELSE 0 END AS year_sort,
+    CASE WHEN month IS NULL THEN 1 ELSE 0 END AS month_sort
+FROM monthly_revenue
+UNION ALL
+SELECT
+    year, month, revenue,
+    CASE WHEN year IS NULL THEN 1 ELSE 0 END,
+    CASE WHEN month IS NULL THEN 1 ELSE 0 END
+FROM yearly_revenue
+UNION ALL 
+SELECT
+    year, month, revenue,
+    CASE WHEN year IS NULL THEN 1 ELSE 0 END,
+    CASE WHEN month IS NULL THEN 1 ELSE 0 END
+FROM overall_revenue
+ORDER BY year_sort, year, month_sort, month;
+
+
+-- Better Solution
+
+SELECT  
+    YEAR(start_timestamp) AS year,
+    MONTH(start_timestamp) AS month,
+    SUM(total_paid) AS revenue
+FROM rental
+GROUP BY GROUPING SETS (
+							YEAR(start_timestamp), MONTH(start_timestamp),
+							YEAR(start_timestamp),
+							()
+						)
+
+
+
+-- Find the total revenue from memberships for each combination of year, month, and membership_type_name
+
+SELECT
+	YEAR(m.start_date) AS year,
+	MONTH(m.start_date) AS month,
+	mt.name membership_type_name,
+	SUM(total_paid) AS total_revenue
+FROM membership m
+JOIN membership_type mt
+ON m.membership_type_id = mt.id
+GROUP BY YEAR(m.start_date), MONTH(m.start_date), mt.name
+ORDER BY 1, 2, 3
+
+
+-- Display the total revenue from memberships purchased in 2023 for each combination of month and membership type. 
+
+SELECT
+	mt.name membership_type_name,
+	MONTH(m.start_date) AS month,
+	SUM(total_paid) AS total_revenue
+FROM membership m
+JOIN membership_type mt
+ON m.membership_type_id = mt.id
+WHERE YEAR(m.start_date) = 2023
+GROUP BY CUBE(mt.name, MONTH(m.start_date))
+ORDER BY 1, 2
+
+
+-- Segment Customers based on number of rentals
+
+WITH cte AS (
+SELECT 
+	customer_id, COUNT(1) AS cnt
+FROM rental
+GROUP BY customer_id
+), cte2 AS (
+SELECT 
+	CASE WHEN cnt > 10 THEN 'more than 10' 
+		 WHEN cnt >= 5 AND cnt <= 10 THEN 'between 5 & 10'
+		 WHEN cnt < 5 THEN 'fewer than 5'
+	END AS rental_count_category
+FROM cte
+)
+SELECT 
+	rental_count_category, COUNT(rental_count_category) AS customer_count
+FROM cte2
+GROUP BY rental_count_category
+ORDER BY 2
+
+
+with cte as 
+    (select customer_id, count(1)
+    , case when count(1) > 10 then 'more than 10' 
+           when count(1) between 5 and 10 then 'between 5 and 10'
+           else 'fewer than 5'
+      end as category
+    from rental
+    GROUP by customer_id)
+select category as rental_count_category
+, count(*) as customer_count
+from cte 
+group by category
+order by customer_count;

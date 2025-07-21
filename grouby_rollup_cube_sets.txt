@@ -1,0 +1,58 @@
+/*
+Group By ROLLUP, CUBE, and GROUPING SETS are used to generate summary-level data across multiple dimensions.
+
+ROLLUP - Creates subtotals and a grand total.
+CUBE - Computes all possible combinations of aggregates across dimensions.
+GROUPING SETS - Generates Custom combinations of groups—you decide exactly what summaries you want.
+
+*/
+
+
+Create table orders2
+(
+    Id int primary key identity,
+    Continent nvarchar(50),
+    Country nvarchar(50),
+    City nvarchar(50),
+    amount int
+);
+
+
+Insert into orders2 values('Asia','India','Bangalore',1000)
+Insert into orders2 values('Asia','India','Chennai',2000)
+Insert into orders2 values('Asia','Japan','Tokyo',4000)
+Insert into orders2 values('Asia','Japan','Hiroshima',5000)
+Insert into orders2 values('Europe','United Kingdom','London',1000)
+Insert into orders2 values('Europe','United Kingdom','Manchester',2000)
+Insert into orders2 values('Europe','France','Paris',4000)
+Insert into orders2 values('Europe','France','Cannes',5000)
+
+
+-- ROLLUP - It will generate aggregated values based on Continent only (Country, Citu NULL), combination of Continent, Country (City NULL) and combination of Continent, Country, City
+
+SELECT 
+	Continent, Country, City,
+	SUM(amount) AS total
+FROM orders2
+GROUP BY ROLLUP(Continent, Country, City)
+
+
+-- CUBE - Generates al kinds of combinations like Only Continent, Only city, Continent and City etc.
+
+SELECT 
+	Continent, Country, City,
+	SUM(amount) AS total
+FROM orders2
+GROUP BY CUBE(Continent, Country, City)
+
+
+-- GROUPING SETS - Can explicitly specify which combinations want
+SELECT 
+	Continent, Country, City,
+	SUM(amount) AS total
+FROM orders2
+GROUP BY GROUPING SETS(
+						(Continent, Country), 
+						(City),
+						(Continent, City)
+					)
