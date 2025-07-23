@@ -1,0 +1,55 @@
+-- Generate a report to showcase the period of presence and absense of each employee as shown in expected output.
+
+
+employee	from_date	to_date		status
+A1			2024-01-01	2024-01-03	PRESENT
+A1			2024-01-04	2024-01-04	ABSENT
+A1			2024-01-05	2024-01-06	PRESENT
+A1			2024-01-07	2024-01-09	ABSENT
+A1			2024-01-10	2024-01-10	PRESENT
+A2			2024-01-06	2024-01-07	PRESENT
+A2			2024-01-08	2024-01-08	ABSENT
+A2			2024-01-09	2024-01-09	PRESENT
+A2			2024-01-10	2024-01-10	ABSENT
+
+
+create table emp_attendance
+(
+	employee 	varchar(10),
+	dates 		date,
+	status 		varchar(20)
+);
+
+insert into emp_attendance values('A1', '2024-01-01', 'PRESENT');
+insert into emp_attendance values('A1', '2024-01-02', 'PRESENT');
+insert into emp_attendance values('A1', '2024-01-03', 'PRESENT');
+insert into emp_attendance values('A1', '2024-01-04', 'ABSENT');
+insert into emp_attendance values('A1', '2024-01-05', 'PRESENT');
+insert into emp_attendance values('A1', '2024-01-06', 'PRESENT');
+insert into emp_attendance values('A1', '2024-01-07', 'ABSENT');
+insert into emp_attendance values('A1', '2024-01-08', 'ABSENT');
+insert into emp_attendance values('A1', '2024-01-09', 'ABSENT');
+insert into emp_attendance values('A1', '2024-01-10', 'PRESENT');
+insert into emp_attendance values('A2', '2024-01-06', 'PRESENT');
+insert into emp_attendance values('A2', '2024-01-07', 'PRESENT');
+insert into emp_attendance values('A2', '2024-01-08', 'ABSENT');
+insert into emp_attendance values('A2', '2024-01-09', 'PRESENT');
+insert into emp_attendance values('A2', '2024-01-10', 'ABSENT');
+
+
+
+WITH cte1 AS (
+SELECT 
+	*, 
+	DATEADD(DAY, -(ROW_NUMBER() OVER(PARTITION BY employee, status ORDER BY dates)), dates) AS diff
+FROM emp_attendance
+--ORDER BY employee, dates
+)
+SELECT
+	employee,
+	MIN(dates) AS from_date,
+	MAX(dates) AS to_date,
+	status
+FROM cte1
+GROUP by employee, status, diff
+ORDER BY employee, from_date

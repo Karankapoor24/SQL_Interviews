@@ -1,0 +1,110 @@
+-- From the weather table, fetch all the records when London had extremely cold temperature for 3 consecutive days or more.
+-- Weather is considered to be extremely cold then its temperature is less than zero.
+
+
+create table weather
+(
+id int,
+city varchar(50),
+temperature int,
+day date
+);
+
+
+INSERT INTO weather VALUES
+(1,  'London', -1, CAST('2021-01-01' AS DATE)),
+(2,  'London', -2, CAST('2021-01-02' AS DATE)),
+(3,  'London',  4, CAST('2021-01-03' AS DATE)),
+(4,  'London',  1, CAST('2021-01-04' AS DATE)),
+(5,  'London', -2, CAST('2021-01-05' AS DATE)),
+(6,  'London', -5, CAST('2021-01-06' AS DATE)),
+(7,  'London', -7, CAST('2021-01-07' AS DATE)),
+(8,  'London',  5, CAST('2021-01-08' AS DATE)),
+(9,  'London', -3, CAST('2021-01-09' AS DATE)),
+(10, 'London', -4, CAST('2021-01-10' AS DATE)),
+(11, 'London', -2, CAST('2021-01-11' AS DATE)),
+(12, 'London', -6, CAST('2021-01-12' AS DATE)),
+(13, 'London', -1, CAST('2021-01-13' AS DATE)),
+(14, 'London',  2, CAST('2021-01-14' AS DATE)),
+(15, 'London',  3, CAST('2021-01-15' AS DATE));
+
+
+
+-- When the Table has a numeric Primary Key
+
+WITH t1 AS (
+SELECT 
+	*,
+	id - (ROW_NUMBER() OVER(ORDER BY id)) AS diff
+FROM weather
+WHERE temperature < 0
+), t2 AS (
+SELECT 
+	*,
+	COUNT(*) OVER(PARTITION BY diff) AS no_of_records
+FROM t1
+)
+SELECT 
+	id, city, temperature, day
+FROM t2
+WHERE no_of_records >= 3
+
+
+
+-- When table doesn't have a Primary Key 
+
+WITH w AS (
+SELECT 
+	city, temperature,
+	ROW_NUMBER() OVER(ORDER BY city) AS id
+FROM weather
+), t1 AS (
+SELECT 
+	*,
+	id - (ROW_NUMBER() OVER(ORDER BY id)) AS diff
+FROM w
+WHERE temperature < 0
+), t2 AS (
+SELECT 
+	*,
+	COUNT(*) OVER(PARTITION BY diff) AS no_of_records
+FROM t1
+)
+SELECT 
+	id, city, temperature
+FROM t2
+WHERE no_of_records >= 3
+
+
+
+CREATE TABLE orders3 (
+    order_id VARCHAR(20) PRIMARY KEY,
+    order_date DATE
+);
+
+INSERT INTO orders3 (order_id, order_date) VALUES
+('ORD1001', '2021-01-01'),
+('ORD1002', '2021-02-01'),
+('ORD1003', '2021-02-02'),
+('ORD1004', '2021-02-03'),
+('ORD1005', '2021-03-01'),
+('ORD1006', '2021-06-01'),
+('ORD1007', '2021-12-25'),
+('ORD1008', '2021-12-26');
+
+
+-- Based on DATE
+
+WITH t1 AS (
+SELECT 
+	*,
+	DATEADD(DAY, - (ROW_NUMBER() OVER(ORDER BY order_date)), order_date) AS diff
+FROM orders3
+), t2 AS (
+SELECT 
+	*,
+	COUNT(*) OVER(PARTITION BY diff) AS no_of_records
+FROM t1
+)
+SELECT * FROM t2
+WHERE no_of_records >= 3;

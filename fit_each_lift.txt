@@ -1,0 +1,53 @@
+-- Multiple passengers can enter the same lift but the wieight should not go beyond limit.
+-- Write Query that generates comma seperated list of passengers who can be accomodated in each lift without increasing its capacity.
+-- Passangers should be ordered by thir weight in increasing order
+
+create table lifts
+(
+      id         	  int
+    , capacity_kg     int
+);
+
+
+insert into lifts values (1, 300);
+insert into lifts values (2, 350);
+
+
+create table lift_passengers
+(
+      passenger_name    varchar(50)
+    , weight_kg     	int
+	, lift_id			int
+);
+
+
+insert into lift_passengers values ('Rahul', 85, 1);
+insert into lift_passengers values ('Adarsh', 73, 1);
+insert into lift_passengers values ('Riti', 95, 1);
+insert into lift_passengers values ('Dheeraj', 80, 1);
+insert into lift_passengers values ('Vimal', 83, 2);
+insert into lift_passengers values ('Neha', 77, 2);
+insert into lift_passengers values ('Priti', 73, 2);
+insert into lift_passengers values ('Himanshi', 85, 2);
+
+
+lift_id		passangers
+1			Adarsh,Dheeraj,Rahul
+2			Priti,Neha,Vimal,Himanshi
+
+
+
+WITH data AS (
+SELECT
+	*,
+	SUM(weight_kg) OVER(PARTITION BY lift_id ORDER BY weight_kg) AS rsum
+FROM lift_passengers lp
+JOIN lifts l
+ON l.id=lp.lift_id
+)
+SELECT 
+	lift_id,
+	STRING_AGG(passenger_name, ',')
+FROM data 
+WHERE rsum < capacity_kg
+GROUP BY lift_id
