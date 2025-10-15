@@ -1,0 +1,60 @@
+/*
+
+You are given a table named Baskets with the following schema:
+
+Baskets(Person VARCHAR, Basket VARCHAR)
+
+Each row contains a person's name and a comma-separated list of fruits in their basket.
+
+Write a SQL query to transform the data so that each fruit becomes its own column (Apple, Mango, Orange, Guava, Cherry) and 
+the values should be 'Yes' if the person has that fruit in their basket, otherwise 'No
+
+*/
+
+
+CREATE TABLE baskets (
+    Person VARCHAR(10),
+    Basket VARCHAR(100)
+);
+
+
+INSERT INTO baskets (Person, Basket) VALUES
+('A', 'Apple,Mango,Orange'),
+('B', 'Apple'),
+('C', 'Guava,Cherry'),
+('D', 'Mango,Cherry,Orange');
+
+
+
+Input
+
+
+Person	Basket
+A		Apple,Mango,Orange
+B		Apple
+C		Guava,Cherry
+D		Mango,Cherry,Orange
+
+
+Output
+
+
+person	Apple	Mango	Orange	Guava	Cherry
+A		Yes		Yes		Yes		No		No
+B		Yes		No		No		No		No
+C		No		No		No		Yes		Yes
+D		No		Yes		Yes		No		Yes
+
+
+
+Solution 
+
+
+SELECT 
+	person,
+	CASE WHEN basket LIKE '%Apple%' THEN 'Yes' ELSE 'No' END AS Apple,
+	CASE WHEN basket LIKE '%Mango%' THEN 'Yes' ELSE 'No' END AS Mango,
+	CASE WHEN basket LIKE '%Orange%' THEN 'Yes' ELSE 'No' END AS Orange,
+	CASE WHEN basket LIKE '%Guava%' THEN 'Yes' ELSE 'No' END AS Guava,
+	CASE WHEN basket LIKE '%Cherry%' THEN 'Yes' ELSE 'No' END AS Cherry
+FROM baskets

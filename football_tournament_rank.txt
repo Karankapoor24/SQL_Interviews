@@ -1,0 +1,95 @@
+/* 
+
+In a Football tournament some data is recorded. Every winning team gets a point and the loosing team looses a point. 
+At the end of the tournament a ranking is given to all 3 the teams based on their total points. 
+The total points of a team can be negatitve. 
+You are given tables: Matches Record and Team Details. 
+
+The ranking should be 4 calculated according to the following rules 
+1. The total points should be ranked from the highest to lowest. 
+2. if two teams have the same total points, then the team with the higher number of winning goals would be ranked higher.
+*/
+
+
+CREATE TABLE matches (
+    match_id INT PRIMARY KEY,
+    winning_team_id INT,
+    losing_team_id INT,
+    goals_won INT
+);
+
+
+INSERT INTO matches (match_id, winning_team_id, losing_team_id, goals_won) VALUES
+(1, 1001, 1007, 1),
+(2, 1007, 1001, 2),
+(3, 1006, 1003, 3),
+(4, 1001, 1003, 1),
+(5, 1007, 1001, 1),
+(6, 1006, 1003, 2),
+(7, 1006, 1001, 3),
+(8, 1007, 1003, 5),
+(9, 1001, 1003, 1),
+(10, 1007, 1006, 2),
+(11, 1006, 1003, 3),
+(12, 1001, 1003, 4),
+(13, 1001, 1006, 2),
+(14, 1007, 1001, 4),
+(15, 1006, 1007, 3),
+(16, 1001, 1003, 3),
+(17, 1001, 1007, 3),
+(18, 1006, 1007, 2),
+(19, 1003, 1001, 1),
+(20, 1001, 1007, 3),
+(21, 1001, 1003, 3);
+
+
+
+CREATE TABLE teaminfo (
+    team_id INT ,
+    team_name VARCHAR(20)
+);
+
+
+INSERT INTO teaminfo (team_id, team_name) VALUES
+(1001,'Nickmiesters'),
+(1003,'sunrisers'),
+(1006,'Philipines prates'),
+(1007,'Smashers')
+
+
+Output
+
+
+team_name			rn
+Nickmiesters		1
+Philipines prates	2
+Smashers			3
+sunrisers			4
+
+
+Solution
+
+
+WITH cte AS (
+SELECT
+	winning_team_id AS team, 1 AS points, goals_won
+FROM matches
+
+UNION ALL
+
+SELECT
+	losing_team_id AS team, -1 AS points, 0 AS goals_won
+FROM matches
+), cte2 AS (
+SELECT
+	t.team_name,
+	SUM(points) AS total_points,
+	SUM(goals_won) AS total_goals
+FROM cte c
+JOIN teaminfo t
+ON c.team = t.team_id
+GROUP BY t.team_name
+)
+SELECT 
+	team_name, RANK() OVER(ORDER BY total_points DESC, total_goals DESC) AS rn
+FROM cte2

@@ -1,0 +1,119 @@
+-- Reverse the product id for each product in the categories
+
+
+CREATE TABLE Products_reverse (
+    ProductID INT PRIMARY KEY,
+    Product VARCHAR(255),
+    Category VARCHAR(100)
+);
+
+
+INSERT INTO Products_reverse (ProductID, Product, Category)
+VALUES
+    (1, 'Laptop', 'Electronics'),
+    (2, 'Smartphone', 'Electronics'),
+    (3, 'Tablet', 'Electronics'),
+    (4, 'Headphones', 'Accessories'),
+    (5, 'Smartwatch', 'Accessories'),
+    (6, 'Keyboard', 'Accessories'),
+    (7, 'Mouse', 'Accessories'),
+    (8, 'Monitor', 'Accessories'),
+    (9, 'Printer', 'Electronics');
+	
+
+Input
+
+
+ProductID		Product				Category
+4				Headphones			Accessories
+5				Smartwatch			Accessories
+6				Keyboard			Accessories
+7				Mouse				Accessories
+8				Monitor				Accessories
+1				Laptop				Electronics
+2				Smartphone			Electronics
+3				Tablet				Electronics
+9				Printer				Electronics	
+	
+	
+	
+Output
+
+
+ProductID		Product				Category
+4				Monitor				Accessories
+5				Mouse				Accessories
+6				Keyboard			Accessories
+7				Smartwatch			Accessories
+8				Headphones			Accessories
+1				Printer				Electronics
+2				Tablet				Electronics
+3				Smartphone			Electronics
+9				Laptop				Electronics
+
+	
+WITH cte AS (
+SELECT 
+	*,
+	ROW_NUMBER() OVER(PARTITION  BY Category ORDER BY ProductID) AS rn1,
+	ROW_NUMBER() OVER(PARTITION  BY Category ORDER BY ProductID DESC) AS rn2
+FROM Products_reverse
+)
+SELECT
+	a.ProductID, b.Product, b.Category
+FROM cte a
+JOIN cte b
+ON a.category = b.category AND a.rn1=b.rn2
+
+
+
+-- Q2
+
+
+ProductID		Product				Category
+9				Laptop				Electronics
+8				Smartphone			Electronics
+7				Tablet				Electronics
+6				Headphones			Accessories
+5				Smartwatch			Accessories
+4				Keyboard			Accessories
+3				Mouse				Accessories
+2				Monitor				Accessories
+1				Printer				Electronics
+
+
+
+Solution 1
+
+
+WITH cte AS (
+SELECT 
+	*,
+	ROW_NUMBER() OVER(ORDER BY (SELECT NULL) ) AS rn
+FROM Products_reverse
+)
+SELECT
+	(SELECT COUNT(*) FROM cte) - rn + 1 AS ProductID,
+	Product,
+	Category
+FROM cte
+
+
+
+Solution 2
+
+SELECT
+	(SELECT COUNT(*) FROM Products_reverse) - ProductID + 1 AS ProductID,
+	Product,
+	Category
+FROM Products_reverse
+
+
+Solution 3
+
+
+SELECT
+	ROW_NUMBER() OVER(ORDER BY ProductID DESC) AS ProductID,
+	Product,
+	Category
+FROM Products_reverse
