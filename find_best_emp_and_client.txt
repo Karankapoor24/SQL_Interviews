@@ -1,0 +1,171 @@
+CREATE TABLE department (
+    dep_id INT,
+    dep_name VARCHAR(50)
+);
+
+CREATE TABLE empdetails (
+    emp_id INT,
+    first_name VARCHAR(50),
+    gender VARCHAR(1),
+    dep_id INT
+);
+
+CREATE TABLE client (
+    client_id INT,
+    client_name VARCHAR(50)
+);
+
+CREATE TABLE empsales (
+    emp_id INT,
+    client_id INT,
+    sales INT
+);
+
+-- Insert data
+INSERT INTO department (dep_id, dep_name) VALUES
+(1, 'Electronics'),
+(2, 'Furniture'),
+(3, 'Clothing');
+
+INSERT INTO empdetails (emp_id, first_name, gender, dep_id) VALUES
+(101, 'Alice', 'F', 1),
+(102, 'Bob', 'M', 1),
+(103, 'Charlie', 'M', 2),
+(104, 'Diana', 'F', 2),
+(105, 'Ethan', 'M', 3),
+(106, 'Fiona', 'F', 3);
+
+INSERT INTO client (client_id, client_name) VALUES
+(1, 'Amazon'),
+(2, 'Walmart'),
+(3, 'Costco'),
+(4, 'Target'),
+(5, 'BestBuy');
+
+INSERT INTO empsales (emp_id, client_id, sales) VALUES
+(101, 1, 5000),
+(101, 2, 3000),
+(102, 1, 7000),
+(102, 3, 2000),
+(103, 2, 4000),
+(103, 4, 3000),
+(104, 4, 6000),
+(105, 5, 8000),
+(106, 3, 5000),
+(106, 5, 2000);
+
+
+You are given the following tables
+
+empdetails
+empsales
+department
+client
+
+Q1 A company organizes a facilitation event to cheer up its employees and clients and keep them motivated. 
+The company has many departments, and in this event, the company wants to facilitate its best employees and clients of each department. 
+The employee who has the most sales in the entire department is the best employee of that department. 
+A client who has given the most sales to the department is the best client. 
+
+Write a query to find the client id and emp_id of the best client and the best employee, respectively, for each department
+
+emp_id	dep_name	client_name
+102		Electronics	Amazon
+103		Furniture	Target
+105		Clothing	BestBuy
+
+
+Solution 1
+
+
+WITH cte AS (
+SELECT  
+	s.*, d.dep_id 
+FROM empsales s
+JOIN empdetails d
+ON s.emp_id = d.emp_id
+), emp_cte AS (
+SELECT
+	emp_id, dep_id, SUM(sales) AS sales
+FROM cte
+GROUP BY emp_id, dep_id
+), emp_rnk AS (
+SELECT 
+	emp_id, dep_id, sales
+FROM (
+SELECT 
+	*, ROW_NUMBER() OVER(PARTITION BY dep_id ORDER BY sales DESC) AS rn
+FROM emp_cte
+) x
+WHERE rn=1
+), client_cte AS (
+SELECT
+	client_id, dep_id, SUM(sales) AS sales
+FROM cte
+GROUP BY client_id, dep_id
+), client_rnk AS (
+SELECT 
+	client_id, dep_id, sales
+FROM (
+SELECT 
+	*, ROW_NUMBER() OVER(PARTITION BY dep_id ORDER BY sales DESC) AS rn
+FROM client_cte
+) x
+WHERE rn=1
+)
+SELECT 
+	e.emp_id, d.dep_name, cl.client_name
+FROM emp_rnk e
+INNER JOIN client_rnk c
+ON c.dep_id = e.dep_id
+INNER JOIN department d
+ON e.dep_id = d.dep_id
+INNER JOIN client cl
+ON c.client_id = cl.client_id
+;
+
+
+Solution 2
+
+
+WITH cte AS (
+SELECT  
+	s.*, d.dep_id 
+FROM empsales s
+JOIN empdetails d
+ON s.emp_id = d.emp_id
+), emp_client_cte AS (
+SELECT
+	emp_id AS id, dep_id, SUM(sales) AS sales, 'emp' AS sale_type
+FROM cte
+GROUP BY emp_id, dep_id
+
+UNION ALL
+
+SELECT
+	client_id AS id, dep_id, SUM(sales) AS sales, 'client' AS sale_type
+FROM cte
+GROUP BY client_id, dep_id
+), final_data AS (
+SELECT 
+	dep_id, 
+	MAX(CASE WHEN sale_type = 'emp' THEN id END) AS emp_id,
+	MAX(CASE WHEN sale_type = 'client' THEN id END) AS client_id
+FROM (
+SELECT 
+	*,
+	ROW_NUMBER() OVER(PARTITION BY dep_id, sale_type ORDER BY sales DESC) AS rn
+FROM emp_client_cte
+) x
+WHERE rn=1
+GROUP BY dep_id
+)
+SELECT 
+	f.dep_id,
+	m.first_name, 
+	n.client_name
+FROM final_data f
+JOIN empdetails m
+ON f.emp_id = m.emp_id
+JOIN client n
+ON f.client_id = n.client_id
