@@ -44,3 +44,44 @@ FROM cars_data
 ) a
 WHERE rn > 1
 )
+
+
+
+-- Way to delete from original TABLE
+
+CREATE TABLE Employee (
+    EmpID INT NOT NULL,
+    Name VARCHAR(50),
+    Department VARCHAR(50),
+    UpdatedAt DATETIME,
+    PRIMARY KEY (EmpID, UpdatedAt) -- optional, ensures uniqueness per timestamp
+);
+
+
+INSERT INTO Employee (EmpID, Name, Department, UpdatedAt)
+VALUES
+(1, 'Alice', 'HR', '2025-01-01 10:00:00'),
+(1, 'Alice', 'HR', '2025-01-05 09:00:00'),
+(2, 'Bob', 'Finance', '2025-01-02 11:30:00'),
+(2, 'Bob', 'Finance', '2025-01-03 14:45:00'),
+(3, 'Charlie', 'IT', '2025-01-04 08:20:00');
+
+
+WITH Ranked AS (
+    SELECT EmpID, UpdatedAt,
+           ROW_NUMBER() OVER (PARTITION BY EmpID ORDER BY UpdatedAt DESC) AS rn
+    FROM Employee
+)
+DELETE e
+FROM Employee e
+JOIN Ranked r
+  ON e.EmpID = r.EmpID
+ AND e.UpdatedAt = r.UpdatedAt
+WHERE r.rn > 1;
+
+
+DELETE e1
+FROM Employee e1
+JOIN Employee e2
+  ON e1.EmpID = e2.EmpID
+ AND e1.UpdatedAt < e2.UpdatedAt;

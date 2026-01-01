@@ -23,8 +23,8 @@ insert into employee_salary values('John', 'HR', 4500);
 insert into employee_salary values('Kabir', 'IT', 8000);
 
 
-SELECT
+SELECT 
 	*,
-	MAX(salary) OVER(PARTITION BY dept ORDER BY salary DESC) AS highest_sal,
-	MIN(salary) OVER(PARTITION BY dept ORDER BY salary DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS lowest_sal
+	MAX(salary) OVER(PARTITION BY dept) AS max_dept_sal,
+	MIN(salary) OVER(PARTITION BY dept) AS min_dept_sal
 FROM employee_salary
