@@ -1,0 +1,99 @@
+Question: You are given an Orders table with the following columns:
+Customer id: ID of the customer
+Order date: Date when the order was placed
+coupon code: Coupon code used in the order (can be Null if no coupon was applied)
+
+We want an SQL query to retum the number of new customers who satisfy all of the following conditions:
+
+They place orders in each of their first 3 consecutive months since their very first order.
+The number of orders in the second month is exactly double the number of orders in the first month
+The number of orders in the third month is exactly triple the number of orders in the first month.
+Their last order (latest by date) was placed with a coupon code (le, Coupon Code is not NULL)
+
+
+CREATE TABLE orders_blinkit (
+    customer_id INT,
+    order_date DATE,
+    coupon_code VARCHAR(50)
+);
+
+
+INSERT INTO orders_blinkit (customer_id, order_date, coupon_code) VALUES
+(1, '2025-01-10', NULL),
+(1, '2025-02-05', NULL),
+(1, '2025-02-20', NULL),
+(1, '2025-03-01', NULL),
+(1, '2025-03-10', NULL),
+(1, '2025-03-15', 'DISC10'),
+(2, '2025-02-02', NULL),
+(2, '2025-02-05', NULL),
+(2, '2025-03-05', NULL),
+(2, '2025-03-18', NULL),
+(2, '2025-03-20', NULL),
+(2, '2025-03-22', NULL),
+(2, '2025-04-02', NULL),
+(2, '2025-04-10', NULL),
+(2, '2025-04-15', 'DISC20'),
+(2, '2025-04-16', NULL),
+(2, '2025-04-18', NULL),
+(2, '2025-04-20', 'DISC20'),
+(3, '2025-03-05', NULL),
+(3, '2025-04-10', NULL),
+(3, '2025-05-15', 'DISC30'),
+(4, '2025-02-01', NULL),
+(4, '2025-04-05', 'DISC40'),
+(5, '2025-01-03', NULL),
+(5, '2025-02-05', NULL),
+(5, '2025-02-15', NULL),
+(5, '2025-03-01', NULL),
+(5, '2025-03-08', 'DISC50'),
+(5, '2025-03-20', NULL),
+(6, '2025-01-05', NULL),
+(6, '2025-03-02', NULL),
+(6, '2025-03-15', NULL),
+(6, '2025-05-05', NULL),
+(6, '2025-05-10', NULL),
+(6, '2025-05-25', 'DISC60');
+
+
+
+number_of_customers
+2
+
+
+WITH cust_first_order AS (
+SELECT 
+	customer_id, coupon_code,
+	DATETRUNC(month, order_date) AS order_month,
+	MIN(DATETRUNC(month, order_date)) OVER(PARTITION BY customer_id) AS first_order_month ,
+	LAST_VALUE(coupon_code) OVER(PARTITION BY customer_id ORDER BY order_date ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_coupon_code
+FROM orders_blinkit
+), cons_months AS (
+SELECT
+	*,
+	DATEDIFF(month, first_order_month, order_month) + 1 AS month_number
+FROM cust_first_order
+WHERE last_coupon_code IS NOT NULL
+), three_months_orders AS (
+SELECT 
+	customer_id,
+	SUM(CASE WHEN month_number = 1 THEN 1 ELSE 0 END) AS first_month_orders,
+	SUM(CASE WHEN month_number = 2 THEN 1 ELSE 0 END) AS second_month_orders,
+	SUM(CASE WHEN month_number = 3 THEN 1 ELSE 0 END) AS third_month_orders
+FROM cons_months
+WHERE month_number IN (1, 2, 3)
+GROUP BY customer_id
+)
+SELECT 
+	COUNT(*) AS number_of_customers
+FROM three_months_orders
+WHERE second_month_orders = 2 * first_month_orders AND third_month_orders = 3 * first_month_orders
+
+
+As per first condition we want customers who placed orders in first 3 consecutive months since their first month so in cust_first_order, 
+we are getting for each order the order_month and first_order_month which will help us to find current order is in which month wrt first month.
+FROM cons_months cte we will try to determine which month is it from first month and we ar interested in first 3 months only so will filter b that
+FROM three_months_orders, we will get orders seperately by first 3 months and apply filter to see second month is double and third is triple of first month
+As we need to those customers who placed lastest order with coupon code and latest order could be any month so we need to get latest order coupon code
+and apply before grouping for 3 months so that's why we get the latest coupon code in 1st cte itself and filtering for coupon code not null in second before
+grouping based on first 3 months.

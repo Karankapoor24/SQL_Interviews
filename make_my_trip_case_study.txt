@@ -1,0 +1,163 @@
+create table booking_table (
+    booking_id varchar(10),
+    booking_date date,
+    user_id varchar(10),
+    line_of_business varchar(20)
+);
+
+insert into booking_table (booking_id, booking_date, user_id, line_of_business) values
+('b1',  '2022-03-23', 'u1', 'Flight'),
+('b2',  '2022-03-27', 'u2', 'Flight'),
+('b3',  '2022-03-28', 'u1', 'Hotel'),
+('b4',  '2022-03-31', 'u4', 'Flight'),
+('b5',  '2022-04-02', 'u1', 'Hotel'),
+('b6',  '2022-04-02', 'u2', 'Flight'),
+('b7',  '2022-04-06', 'u5', 'Flight'),
+('b8',  '2022-04-06', 'u6', 'Hotel'),
+('b9',  '2022-04-06', 'u2', 'Flight'),
+('b10', '2022-04-10', 'u1', 'Flight'),
+('b11', '2022-04-12', 'u4', 'Flight'),
+('b12', '2022-04-16', 'u1', 'Flight'),
+('b13', '2022-04-19', 'u2', 'Flight'),
+('b14', '2022-04-20', 'u5', 'Hotel'),
+('b15', '2022-04-22', 'u6', 'Flight'),
+('b16', '2022-04-26', 'u4', 'Hotel'),
+('b17', '2022-04-28', 'u2', 'Hotel'),
+('b18', '2022-04-30', 'u1', 'Hotel'),
+('b19', '2022-05-04', 'u4', 'Hotel'),
+('b20', '2022-05-06', 'u1', 'Flight');
+
+create table user_table (
+    user_id varchar(10),
+    segment varchar(10)
+);
+
+insert into user_table (user_id, segment) values
+('u1', 's1'),
+('u2', 's1'),
+('u3', 's1'),
+('u4', 's2'),
+('u5', 's2'),
+('u6', 's3'),
+('u7', 's3'),
+('u8', 's3'),
+('u9', 's3'),
+('u10', 's3');
+
+
+
+-- Q1 - GIve total users per segment and how many users booked flight in april 2022 per segment
+
+
+segment	total_user_count	user_who_booked_flight_in_apr_2022
+s1		3					2	
+s2		2					2
+s3		5					1
+
+
+SELECT 
+	u.segment, COUNT(DISTINCT u.user_id) AS total_user_count, 
+	COUNT(DISTINCT CASE WHEN b.booking_date BETWEEN '2022-04-01' AND '2022-04-30' THEN u.user_id ELSE NULL END) AS user_who_booked_flight_in_apr_2022
+FROM user_table u
+LEFT JOIN booking_table b
+ON u.user_id = b.user_id
+GROUP BY u.segment
+
+
+
+-- Q2 - Give users whose first booking was a hotel booking 
+
+
+user_id
+u6
+
+
+WITH cte AS (
+SELECT 
+	user_id, line_of_business,
+	ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY booking_date) AS rn 
+FROM booking_table
+)
+SELECT user_id FROM cte WHERE rn=1 AND line_of_business='hotel'
+
+
+
+-- Q3 - Write a query to calculate days between first and last booking of user where user_id is u1
+
+
+user_id		num_days
+u1			44
+u2			32
+u4			34
+u5			14
+u6			16
+
+
+SELECT 
+	user_id, 
+	DATEDIFF(day, MIN(booking_date), MAX(booking_date)) num_days
+FROM booking_table
+GROUP BY user_id
+
+
+
+-- Q4 - Query to count number of flight and hotel bookings in each of the users segments for the year 2022
+
+
+segment		flight_bookings		hotel_bookings
+s1			8					4
+s2			3					3
+s3			1					1
+
+
+SELECT 
+	u.segment,
+	SUM(CASE WHEN line_of_business = 'Flight' THEN 1 ELSE 0 END) AS flight_bookings,
+	SUM(CASE WHEN line_of_business = 'Hotel' THEN 1 ELSE 0 END) AS hotel_bookings 
+FROM booking_table b
+INNER JOIN user_table u
+ON u.user_id = b.user_id
+AND DATEPART(year, b.booking_date) = 2022
+GROUP BY u.segment
+
+
+
+-- Q5 - For each segment, the user who made the earliest booking in april 2022 and also return how many bookings that user made in April 2022
+
+
+
+WITH cte AS (
+SELECT 
+	b.*, u.segment,
+	ROW_NUMBER() OVER(PARTITION BY segment ORDER BY booking_date, booking_id) AS rn
+FROM booking_table b
+JOIN user_table u
+ON u.user_id = b.user_id 
+AND b.booking_date BETWEEN '2022-04-01' AND '2022-04-30'
+), first_booking AS (
+SELECT 
+	segment, user_id, booking_date AS first_booking_date
+FROM cte WHERE rn = 1
+)
+SELECT
+	c.segment, c.user_id, MIN(f.first_booking_date) AS first_booking_date, COUNT(*) AS april_bookings
+FROM cte c
+JOIN first_booking f 
+ON c.user_id = f.user_id
+GROUP BY c.segment, c.user_id
+
+
+
+WITH cte AS (
+SELECT 
+	b.*, u.segment,
+	ROW_NUMBER() OVER(PARTITION BY u.segment ORDER BY booking_date, booking_id) AS rn,
+	COUNT(*) OVER(PARTITION BY u.segment, u.user_id) AS april_bookings
+FROM booking_table b
+JOIN user_table u
+ON u.user_id = b.user_id 
+AND b.booking_date BETWEEN '2022-04-01' AND '2022-04-30'
+)
+SELECT 
+	segment, user_id, booking_date AS first_booking_date, april_bookings
+FROM cte WHERE rn=1

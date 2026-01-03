@@ -1,0 +1,65 @@
+-- You have a Club table where members earn rewards. Multiple rewards are stored as a colon-separated string (e.g., 'MM:CI:CD') in a single column.
+Calculate the total points for each club based on specific point values for each reward code.
+
+
+CREATE TABLE club (
+    club_id INT,
+    member_id INT,
+    edu VARCHAR(50)
+);
+
+INSERT INTO club (club_id, member_id, edu) VALUES
+(1001, 210, NULL),
+(1001, 211, 'MM:CI'),
+(1002, 215, 'CD:CI:CM'),
+(1002, 216, 'CL:CM'),
+(1002, 217, 'MM:CM'),
+(1003, 255, NULL),
+(1001, 216, 'CO:CD:CL:MM'),
+(1002, 210, NULL);
+
+
+
+CREATE TABLE points (
+    type VARCHAR(10),
+    points DECIMAL(3,1)
+);
+
+INSERT INTO points (type, points) VALUES
+('MM', 0.5),
+('CI', 0.5),
+('CO', 0.5),
+('CD', 1),
+('CL', 1),
+('CM', 1);
+
+
+
+WITH cte AS (
+SELECT 
+	club_id, value
+FROM club
+CROSS APPLY STRING_SPLIT(COALESCE(edu, '0'), ':')
+)
+SELECT 
+	club_id, CAST (COALESCE(SUM(points), 0) AS INT) AS points
+FROM cte
+LEFT JOIN points
+ON value = type
+GROUP BY club_id
+
+
+
+WITH cte AS (
+SELECT 
+	club_id, value, 
+	CASE WHEN value in ('MM','CI','CO') then 0.5
+	WHEN value in ('CD','CL','CM') then 1 
+	ELSE 0 END AS points
+FROM club
+CROSS APPLY STRING_SPLIT(COALESCE(edu, '0'), ':')
+)
+SELECT
+	club_id, CAST(SUM(points) AS INT) AS points
+FROM cte
+GROUP BY club_id
