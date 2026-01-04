@@ -1,0 +1,67 @@
+There is a table of employee location information. Each record contains a person's name and oty whore they live
+
+Teams are formed within these rules:
+1. team members must live in the city they represent
+2. for each city, create teams of 3 until there are fewer than 3 who are unassigned.
+3. when there are fewer than 3 people unassigned in a city, they form a team.
+
+report requirements
+1. There should be 3 columns: city name, a comma-delimited list of upto 3 players and the team's name
+2. the city should be ordered alphabetically
+3. Players are selected in the order they occur in the table.
+4. their names should be ordered alphabetically within the comma-dalimited list.
+5. team names are Team' plus a number
+For example, the first row's team is Team1, then Team2 and so on through Team20, Orily show the first 20 rows
+
+
+CREATE TABLE emp_location (
+    emp_name VARCHAR(10),
+    city VARCHAR(15)
+);
+
+
+-- Insert sample data
+INSERT INTO emp_location (emp_name, city) VALUES
+('Sam', 'New York'),
+('David', 'New York'),
+('Peter', 'New York'),
+('Chris', 'New York'),
+('John', 'New York'),
+('Steve', 'San Francisco'),
+('Rachel', 'San Francisco'),
+('Robert', 'Los Angeles');
+
+
+city			team				team_name
+Los Angeles		Robert				Team1
+New York		David,Peter,Sam		Team2
+New York		Chris,John			Team3
+San Francisco	Rachel,Steve		Team4
+
+
+
+--use sql_interviews;
+
+--SELECT * FROM emp_location;
+
+with emps AS (
+SELECT 
+	*,
+	ROW_NUMBER() OVER(PARTITION BY city ORDER BY city) AS rn
+FROM emp_location
+), emp_grp AS (
+SELECT 
+	*,
+	CEILING(rn/3.0) AS row_group
+FROM emps
+), emp_team AS (
+SELECT 
+	city, STRING_AGG(emp_name, ',') WITHIN GROUP(ORDER BY emp_name) AS team
+FROM emp_grp
+GROUP BY city, row_group
+)
+SELECT 
+	city, team,
+	CONCAT('Team', ROW_NUMBER() OVER(ORDER BY city)) AS team_name
+FROM emp_team
+;

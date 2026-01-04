@@ -1,0 +1,33 @@
+CREATE TABLE element (
+	type VARCHAR(1)
+)
+
+INSERT INTO element VALUES
+('A'),
+('B'),
+('C'),
+('D'),
+('E'),
+('F')
+
+
+
+type	id
+A		1
+B		2
+C		3
+D		4
+E		5
+F		6
+
+
+
+SELECT 
+	e1.type, COUNT(e2.type) AS id
+FROM element e1
+INNER JOIN element e2
+ON e1.type >= e2.type
+GROUP BY e1.type
+
+
+-- Using self join we will find from first table how many elements are greater than or equal to current element and that will be the count
