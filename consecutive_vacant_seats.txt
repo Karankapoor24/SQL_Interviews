@@ -1,0 +1,43 @@
+-- Write a query to find seat numbers which are vacant and where at least 2 consecutive seats are vacant.
+
+
+CREATE TABLE seats (
+    seat_no INT,
+    occupied CHAR(1)
+);
+
+INSERT INTO seats (seat_no, occupied) VALUES
+(1, 'Y'),
+(2, 'N'),
+(3, 'N'),
+(4, 'N'),
+(5, 'Y'),
+(6, 'N'),
+(7, 'N'),
+(8, 'N'),
+(9, 'N');
+
+
+
+Output
+
+
+seat_no
+2
+6
+7
+
+
+Solution
+
+
+SELECT 
+	seat_no
+FROM (
+SELECT 
+	seat_no, occupied, 
+	LEAD(occupied, 1) OVER(ORDER BY seat_no) AS next_1,
+	LEAD(occupied, 2) OVER(ORDER BY seat_no) AS next_2
+FROM seats
+) x
+WHERE x.occupied = 'N' AND x.next_1 = 'N' AND x.next_2 = 'N'

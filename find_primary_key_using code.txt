@@ -1,0 +1,54 @@
+"""
+Check each column individually:
+	If nunique == total_rows and no nulls → candidate primary key.
+
+Check combinations of columns (pairs, triples, etc.):
+	If combined distinct count == total_rows → candidate composite key.
+"""
+
+
+from pyspark.sql import SparkSession
+from itertools import combinations
+
+# 1. Start a Spark session
+spark = SparkSession.builder.appName("PrimaryKeyDetection").getOrCreate()
+
+# 2. Example dataframe (your sample data)
+data = [
+    ("P1", "C1", 100),
+    ("P1", "C2", 100),
+    ("P2", "C1", 100)
+]
+
+columns = ["PolicyNumber", "CoverageNo", "Premium"]
+
+df = spark.createDataFrame(data, columns)
+
+# 3. Function to find candidate primary keys
+def find_primary_key_candidates(df, max_combination_size=3):
+    """
+    Identify candidate primary keys in a PySpark dataframe.
+    """
+    candidates = []
+    n_rows = df.count()   # total number of rows in dataframe
+
+    # --- Single column check ---
+    for col in df.columns:
+        # distinct count for this column
+        distinct_count = df.select(col).distinct().count()
+        # check uniqueness
+        if distinct_count == n_rows:
+            candidates.append((col,))
+
+    # --- Composite column check ---
+    for r in range(2, max_combination_size+1):
+        for combo in combinations(df.columns, r):
+            distinct_count = df.select(*combo).distinct().count()
+            if distinct_count == n_rows:
+                candidates.append(combo)
+
+    return candidates
+
+# 4. Run the function
+candidates = find_primary_key_candidates(df)
+print("Candidate Primary Keys:", candidates)

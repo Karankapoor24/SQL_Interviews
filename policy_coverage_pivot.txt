@@ -1,0 +1,52 @@
+-- Convert to below output
+
+CREATE TABLE policies (
+    PolicyNumber VARCHAR(10),
+    CoverageNo   VARCHAR(10),
+    Premium      INT
+);
+
+
+INSERT INTO policies (PolicyNumber, CoverageNo, Premium)
+VALUES
+('P1', 'C1', 100),
+('P1', 'C2', 100),
+('P2', 'C1', 100);
+
+
+Input
+
+
+PolicyNumber	CoverageNo	Premium
+P1				C1			100
+P1				C2			100
+P2				C1			100
+
+
+Output
+
+
+PolicyNumber	no_of_coverages	C1	C2	total_premium
+P1				2				1	1	200
+P2				1				1	0	100
+
+
+WITH totals AS (
+SELECT 
+	PolicyNumber, COUNT(CoverageNo) AS no_of_coverages, SUM(premium) AS total_premium
+FROM policies
+GROUP BY PolicyNumber
+), covs AS (
+SELECT 
+	PolicyNumber,
+	SUM(CASE WHEN CoverageNo = 'C1' THEN 1 ELSE 0 END) AS C1,
+	SUM(CASE WHEN CoverageNo = 'C2' THEN 1 ELSE 0 END) AS C2
+FROM policies
+GROUP BY PolicyNumber
+)
+SELECT
+	t.PolicyNumber, t.no_of_coverages, c.C1, c.C2, t.total_premium
+FROM totals t
+INNER JOIN covs c
+ON t.PolicyNumber = c.PolicyNumber
+;

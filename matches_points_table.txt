@@ -1,0 +1,57 @@
+CREATE TABLE matches_table(
+    match_no INT,
+    team_a   VARCHAR(10),
+    team_b   VARCHAR(10),
+    winner   VARCHAR(10)
+);
+
+
+INSERT INTO matches_table (match_no, team_a, team_b, winner) VALUES
+(1,  'AUS', 'IND', 'AUS'),
+(2,  'SA',  'NZ',  'NZ'),
+(3,  'ENG', 'WI',  'ENG'),
+(4,  'AUS', 'SA',  'AUS'),
+(5,  'IND', 'ENG', 'IND'),
+(6,  'NZ',  'WI',  'NZ'),
+(7,  'ENG', 'AUS', 'Draw'),
+(8,  'IND', 'WI',  'IND'),
+(9,  'NZ',  'SA',  'NZ'),
+(10, 'AUS', 'IND', 'IND'),
+(11, 'NZ',  'ENG', 'ENG'),
+(12, 'IND', 'ENG', 'IND');
+
+
+Output 
+
+
+team	wins	losses	draws
+AUS		2		1		1
+ENG		2		2		1
+IND		4		1		0
+NZ		3		1		0
+SA		0		3		0
+WI		0		3		0
+
+
+WITH data AS (
+    SELECT 
+        team_a AS team, 
+        CASE WHEN team_a = winner THEN 1 ELSE 0 END AS win_flag,
+        CASE WHEN team_b = winner THEN 1 ELSE 0 END AS loss_flag,
+        CASE WHEN winner = 'Draw' THEN 1 ELSE 0 END AS draw_flag
+    FROM matches_table
+    UNION ALL
+    SELECT 
+        team_b, 
+        CASE WHEN team_b = winner THEN 1 ELSE 0 END AS win_flag,
+        CASE WHEN team_a = winner THEN 1 ELSE 0 END AS loss_flag,
+        CASE WHEN winner = 'Draw' THEN 1 ELSE 0 END AS draw_flag
+    FROM matches_table
+)
+SELECT 
+    team, 
+    SUM(win_flag) AS wins, 
+    SUM(loss_flag) AS losses, 
+    SUM(draw_flag) AS draws
+FROM data
+GROUP BY team;

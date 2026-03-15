@@ -1,0 +1,38 @@
+-- Given a list of arbitrary_values which can be comma seperated in a single row or could be spread across multiple rows.
+-- Write SQL to group these values as per expected output below
+
+
+CREATE TABLE arbitrary_values (
+	val VARCHAR(200)
+)
+
+INSERT INTO arbitrary_values(val)
+VALUES 
+('a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21')
+
+
+
+
+WITH transformed_data AS(
+SELECT 
+	LTRIM(RTRIM(s.value)) AS individual_value,
+	s.ordinal AS idx
+FROM arbitrary_values av
+CROSS APPLY STRING_SPLIT(av.val, ',', 1) s
+), t2 AS(
+SELECT
+	td.individual_value, td.idx,
+	1 AS iter, td.idx AS start_idx, td.idx AS end_idx
+FROM transformed_data td
+WHERE td.idx=1
+UNION ALL 
+SELECT
+	td.individual_value, td.idx
+	(t2.iter+1) AS iter, 
+	td.idx AS start_idx, td.idx_t2.iter AS end_idx
+FROM t2
+INNER JOIN transformed_data td
+ON td.idx = t2.end_idx+1
+WHERE td.idx <= (SELECt MAX(idx) FROM transformed_data)
+)
+SELECT * FROM t2

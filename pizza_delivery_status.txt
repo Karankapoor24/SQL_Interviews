@@ -82,3 +82,17 @@ AND NOT EXISTS (
 				WHERE d2.cust_name = d.cust_name
 				AND d2.status IN ('DELIVERED', 'SUBMITTED')
 			   )
+			   
+			   
+
+
+SELECT 
+	cust_name, 
+	CASE 
+		WHEN COUNT(*) = SUM(CASE WHEN status = 'DELIVERED' THEN 1 ELSE 0 END)  THEN 'COMPLETED'
+		WHEN COUNT(*) = SUM(CASE WHEN status = 'SUBMITTED' THEN 1 ELSE 0 END)  THEN 'AWAITING PROGRESS'
+		WHEN COUNT(*) != SUM(CASE WHEN status = 'DELIVERED' THEN 1 ELSE 0 END) AND SUM(CASE WHEN status = 'DELIVERED' THEN 1 ELSE 0 END) > 0 THEN 'IN PROGRESS'
+		ELSE 'AWAITING SUBMISSION'
+	END AS final_status
+FROM cust_orders 
+GROUP BY cust_name;

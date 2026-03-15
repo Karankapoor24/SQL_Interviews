@@ -1,0 +1,61 @@
+-- Find out max number of consecutive days a vendor visited a particular office
+
+CREATE TABLE VendorVisits (
+    VendorID   VARCHAR(20),
+    OfficeID   VARCHAR(20),
+    Visit_date DATE
+);
+
+
+INSERT INTO VendorVisits (VendorID, OfficeID, Visit_date) VALUES
+('ABC123', '21AG', '2020-01-12'),
+('ABC123', '21AG', '2020-01-28'),
+('ABC123', '21AG', '2020-01-13'),
+('ABC123', '24BD', '2020-01-14'),
+('ABC123', '21AG', '2020-01-29'),
+('ABC123', '21AG', '2020-01-27'),
+('ABC123', '24BD', '2020-01-15'),
+('BCD234', '21AG', '2020-05-02'),
+('ABC123', '24BD', '2020-01-16'),
+('BCD234', '21AG', '2020-05-04'),
+('BCD234', '24BD', '2020-05-04'),
+('BCD234', '24BD', '2020-05-06'),
+('BCD234', '24BD', '2020-05-07');
+
+
+
+Output
+
+
+VendorID	OfficeID	max_days
+ABC123		21AG		3
+ABC123		24BD		3
+BCD234		21AG		1
+BCD234		24BD		2
+
+
+Solution
+
+
+WITH grp_data AS (
+SELECT 
+	*,
+	DATEADD(day, -ROW_NUMBER() OVER(PARTITION BY VendorID, OfficeID ORDER BY visit_date), visit_date) AS grp
+FROM VendorVisits
+), diff_data AS (
+SELECT 
+	VendorID, OfficeID,
+	DATEDIFF(day, MIN(visit_date), MAX(visit_date)) + 1 AS diff
+FROM grp_data
+GROUP BY VendorID, OfficeID, grp
+), rnk_diff AS (
+SELECT 
+	VendorID, OfficeID, diff,
+	DENSE_RANK() OVER(PARTITION BY VendorID, OfficeID  ORDER BY diff desc) AS rn
+FROM diff_data
+)
+SELECT 
+	DISTINCT VendorID, OfficeID, diff AS max_days
+FROM rnk_diff
+WHERE rn=1
+
